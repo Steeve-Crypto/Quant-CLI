@@ -449,14 +449,28 @@ def simple_multi_asset_portfolio_backtest(
         equity_curves[name] = bt['equity_curve']
         all_returns.append(bt['equity_curve'].pct_change().fillna(0))
 
-    # Simple portfolio: equal risk weighting (inverse vol of individual strategies)
+    # Portfolio allocation: support equal_risk (inverse vol), min_variance (correlation-aware), equal_weight
     returns_df = pd.concat(all_returns, axis=1)
     returns_df.columns = list(spreads.keys())
 
-    if allocation_method == 'equal_risk':
+    if allocation_method == 'min_variance':
+        # Correlation-aware minimum variance portfolio
+        cov = returns_df.cov().values
+        try:
+            inv_cov = np.linalg.inv(cov)
+            ones = np.ones(len(cov))
+            w = inv_cov @ ones
+            w = w / np.sum(w)
+            weights = pd.Series(np.clip(w, 0, None), index=returns_df.columns)  # non-negative
+            weights = weights / weights.sum()
+        except np.linalg.LinAlgError:
+            print("Warning: Singular covariance, falling back to equal_risk")
+            vols = returns_df.std()
+            weights = (1 / vols) / (1 / vols).sum()
+    elif allocation_method == 'equal_risk':
         vols = returns_df.std()
         weights = (1 / vols) / (1 / vols).sum()
-        weights = weights.clip(upper=0.5)  # cap concentration
+        weights = weights.clip(upper=0.5)
     else:
         weights = pd.Series(1.0 / len(spreads), index=returns_df.columns)
 
@@ -609,6 +623,52 @@ def run_prediction_market_arb_pipeline(
     plt.close()
     print(f"  Saved backtest equity curve → {equity_plot_path}")
 
+    # --- MULTI-ASSET DEMO: Generate 2 more synthetic spreads and run portfolio backtest ---
+    print("\n" + "="*70)
+    print("MULTI-ASSET PORTFOLIO DEMO (auto-generated 3 spreads)")
+    print("="*70)
+    spreads = {'market_1': df['spread'].copy()}
+    ou_params_dict = {'market_1': ou_params.copy() if isinstance(ou_params, dict) else ou_params}
+
+    for i in range(2, 4):
+        print(f"  Generating additional synthetic spread for market_{i}...")
+        df_i = generate_cointegrated_prediction_market_data(n_obs=8000, seed=42 + i * 100)  # smaller for demo speed
+        # Approximate independent spread (use mid_p - mid_k as proxy spread)
+        spread_i = (df_i['mid_polymarket'] - df_i['mid_kalshi']).dropna()
+        ou_i = calibrate_ou(spread_i, dt=dt_minutes, method='ols', verbose=False)
+        spreads[f'market_{i}'] = spread_i
+        ou_params_dict[f'market_{i}'] = ou_i
+
+    print("\nRunning multi-asset portfolio backtest with correlation-aware options...")
+    portfolio_result = simple_multi_asset_portfolio_backtest(
+        spreads,
+        ou_params_dict,
+        allocation_method='min_variance',  # correlation-aware min variance
+        max_total_exposure=6.0,
+        verbose=verbose
+    )
+
+    # Save portfolio equity curve
+    fig, ax = plt.subplots(figsize=(12, 5))
+    portfolio_result['portfolio_metrics']['equity_curve'].plot(ax=ax, color='purple', linewidth=1.5, label='Portfolio')
+    ax.set_title("Multi-Asset Portfolio Equity Curve (Min-Variance Allocation)")
+    ax.set_ylabel("Cumulative Return")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    portfolio_equity_path = f"{output_dir}/portfolio_equity_curve.png"
+    plt.savefig(portfolio_equity_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"  Saved portfolio equity curve → {portfolio_equity_path}")
+
+    # Update results with portfolio info
+    portfolio_info = {
+        'n_markets': len(spreads),
+        'allocation_method': 'min_variance',
+        'portfolio_metrics': portfolio_result['portfolio_metrics'],
+        'weights': portfolio_result['weights']
+    }
+
     # --- Step 5: Generate and save rich diagnostics ---
     print("\nGenerating diagnostic plots...")
 
@@ -711,6 +771,7 @@ def run_prediction_market_arb_pipeline(
         'cointegration': coint_results,
         'ou_calibration': ou_params,
         'beta_used': float(beta),
+        'portfolio_demo': portfolio_info if 'portfolio_info' in locals() else {},
         'files_saved': {
             'data_parquet': data_path if data_source == 'synthetic' else parquet_path,
             'price_plot': price_plot_path,
@@ -718,7 +779,8 @@ def run_prediction_market_arb_pipeline(
             'spread_histogram': hist_plot_path,
             'rolling_beta': rolling_beta_path,
             'residual_diagnostics': residual_diag_path,
-            'backtest_equity': equity_plot_path
+            'backtest_equity': equity_plot_path,
+            'portfolio_equity': portfolio_equity_path if 'portfolio_equity_path' in locals() else None
         }
     }
 
