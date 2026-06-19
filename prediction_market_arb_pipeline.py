@@ -419,6 +419,82 @@ def simple_ou_mean_reversion_backtest(
 
 
 # ============================================================
+# NEW: Simple Multi-Asset / Portfolio Backtest
+# ============================================================
+
+def simple_multi_asset_portfolio_backtest(
+    spreads: dict,                    # {'market1': spread_series, 'market2': ...}
+    ou_params_dict: dict,
+    allocation_method: str = 'equal_risk',  # 'equal_risk' or 'equal_weight'
+    max_total_exposure: float = 8.0,
+    verbose: bool = True
+) -> dict:
+    """
+    Simple multi-asset portfolio version.
+    Runs individual OU signals on multiple spreads and combines them
+    with basic risk allocation (equal risk or equal weight).
+    Demonstrates portfolio construction across prediction market events.
+    """
+    equity_curves = {}
+    all_returns = []
+
+    for name, spread in spreads.items():
+        ou_p = ou_params_dict.get(name, {})
+        bt = simple_ou_mean_reversion_backtest(
+            spread, ou_p,
+            entry_z=1.1, exit_z=0.2, max_position=3.0,
+            sizing_method='zscore_scaled',
+            verbose=False
+        )
+        equity_curves[name] = bt['equity_curve']
+        all_returns.append(bt['equity_curve'].pct_change().fillna(0))
+
+    # Simple portfolio: equal risk weighting (inverse vol of individual strategies)
+    returns_df = pd.concat(all_returns, axis=1)
+    returns_df.columns = list(spreads.keys())
+
+    if allocation_method == 'equal_risk':
+        vols = returns_df.std()
+        weights = (1 / vols) / (1 / vols).sum()
+        weights = weights.clip(upper=0.5)  # cap concentration
+    else:
+        weights = pd.Series(1.0 / len(spreads), index=returns_df.columns)
+
+    # Normalize to max_total_exposure
+    weights = weights * (max_total_exposure / weights.sum())
+
+    portfolio_returns = (returns_df * weights).sum(axis=1)
+    portfolio_equity = (1 + portfolio_returns).cumprod()
+
+    portfolio_metrics = {
+        'total_return': float(portfolio_equity.iloc[-1] - 1),
+        'sharpe': float(portfolio_returns.mean() / (portfolio_returns.std() + 1e-9) * np.sqrt(252*24*60)),
+        'max_drawdown': float((portfolio_equity / portfolio_equity.cummax() - 1).min()),
+        'n_assets': len(spreads),
+        'weights': weights.to_dict(),
+        'equity_curve': portfolio_equity
+    }
+
+    if verbose:
+        print("\n" + "="*60)
+        print("SIMPLE MULTI-ASSET PORTFOLIO BACKTEST")
+        print("="*60)
+        print(f"Assets              : {list(spreads.keys())}")
+        print(f"Allocation          : {allocation_method}")
+        print(f"Total Return        : {portfolio_metrics['total_return']*100:.2f}%")
+        print(f"Portfolio Sharpe    : {portfolio_metrics['sharpe']:.2f}")
+        print(f"Portfolio Max DD    : {portfolio_metrics['max_drawdown']*100:.2f}%")
+        print(f"Weights             : { {k: round(v,2) for k,v in weights.items()} }")
+        print("="*60 + "\n")
+
+    return {
+        'portfolio_metrics': portfolio_metrics,
+        'individual_equities': equity_curves,
+        'weights': weights.to_dict()
+    }
+
+
+# ============================================================
 # 3. MAIN PIPELINE
 # ============================================================
 
