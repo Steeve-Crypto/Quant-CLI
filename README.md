@@ -48,6 +48,71 @@ This runs the full pipeline:
 ## Real-World Use Cases
 1. **Election / Political Markets**: Calibrate spreads between Polymarket and Kalshi on the same race. Use portfolio across multiple states/events for diversified mean-reversion trading.
 2. **Crypto / Macro Events**: Trade Fed rate decisions, ETF approvals, or token launches across platforms. The multi-asset version allocates across correlated outcomes.
+
+## Deployment Instructions
+
+### 1. Local Development (Recommended for Testing)
+```bash
+cd /home/workdir/artifacts
+
+# Install dependencies
+pip install -r requirements.txt   # or install individually:
+# pip install pandas numpy scipy statsmodels matplotlib plotly dash streamlit requests websockets python-dotenv
+
+# Run full pipeline + backtests
+python prediction_market_arb_pipeline.py
+
+# Run main dashboard (Dash + Plotly - recommended)
+python dashboard.py
+```
+
+### 2. Docker Deployment (Recommended for Production)
+Create a `Dockerfile` in the project root:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY . /app
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 8050
+CMD ["python", "dashboard.py"]
+```
+
+Build and run:
+```bash
+docker build -t pm-quant-arb .
+docker run -p 8050:8050 pm-quant-arb
+```
+
+### 3. Cloud Deployment Options
+- **Render / Railway / Fly.io**: Connect GitHub repo → set `python dashboard.py` as start command. Port 8050.
+- **Heroku**: Add `Procfile` with `web: python dashboard.py`.
+- **AWS / GCP / Azure**: Use container service or App Runner with the Dockerfile above.
+- **Streamlit Community Cloud**: Push `streamlit_dashboard.py` (free tier available).
+
+### 4. Environment Variables (for Real API Execution)
+Create a `.env` file:
+```env
+POLYMARKET_API_KEY=your_key
+POLYMARKET_PRIVATE_KEY=your_wallet_private_key
+KALSHI_API_KEY=your_key
+KALSHI_API_SECRET=your_secret
+```
+
+**Important**: Never commit `.env` or private keys. Real trading requires proper risk management and testing in paper mode first.
+
+### 5. Production Recommendations
+- Run with `gunicorn` or `uvicorn` for better performance if scaling the dashboard.
+- Use a reverse proxy (Nginx) + HTTPS.
+- Add logging, monitoring (Prometheus/Grafana), and alerts for high latency or drawdowns.
+- Schedule the pipeline daily via cron or cloud scheduler.
+
+## Requirements
+See `requirements.txt` (create one with the packages listed above if not present).
+
 3. **Sports / Awards**: Oscar predictions, Super Bowl props — fast mean-reversion on liquidity imbalances.
 4. **Backtesting Strategy Ideas**: Load your own L2 Parquet data (mid prices) and run the pipeline to evaluate cointegration strength, reversion speed (half-life vs latency), and portfolio Sharpe.
 5. **Institutional Research**: Use as a sandbox for testing order book imbalance signals + OU thresholds from the original thread.

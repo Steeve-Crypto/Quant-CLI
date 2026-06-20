@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-06-19T23:57:29.223002",
+  "data_info": {
+    "n_observations": 30000,
+    "time_start": "2026-05-01 12:00:00",
+    "time_end": "2026-05-22 07:59:00",
+    "duration_minutes": 29999.0,
+    "mean_mid_p": 0.5979636871463356,
+    "mean_mid_k": 0.4827770341040797,
+    "std_mid_p": 0.05609429441345642,
+    "std_mid_k": 0.012652850207079016
+  },
+  "cointegration": {
+    "engle_granger": {
+      "coint_statistic": -2.254680344164738,
+      "coint_pvalue": 0.3963712190239751,
+      "is_cointegrated": "False",
+      "beta": 0.6013743208669422,
+      "intercept": 0.30763397613183496,
+      "adf_stat_resid": -6.374314773256294,
+      "adf_pvalue_resid": 2.3038495907246703e-08,
+      "resid_std": 0.055575817358841595,
+      "n_obs": 30000
+    },
+    "johansen": {
+      "trace_stat_r0": 2415.3019457554074,
+      "crit_value_95_r0": 15.4943,
+      "is_cointegrated_johansen": true,
+      "beta_johansen": 27.03107573410118,
+      "eigenvalues": [
+        0.07403980372590604,
+        0.0035956603231847017
+      ],
+      "n_obs": 30000
+    },
+    "beta_used": 0.6013743208669422
+  },
+  "ou_calibration": {
+    "theta": 85937.85336187975,
+    "mu": 0.3076661639609702,
+    "sigma": 23.03646150990539,
+    "half_life_periods": 8.0656794816731e-06,
+    "half_life_in_dt_units": 1.5335157581704124e-11,
+    "r_squared": 0.7213202321356411,
+    "n_obs": 29999
+  },
+  "beta_used": 0.6013743208669422,
+  "portfolio_demo": {
+    "n_markets": 3,
+    "allocation_method": "min_variance",
+    "portfolio_metrics": {
+      "total_return": 0.0,
+      "sharpe": 0.0,
+      "max_drawdown": 0.0,
+      "n_assets": 3,
+      "weights": {
+        "market_1": NaN,
+        "market_2": NaN,
+        "market_3": NaN
+      },
+      "equity_curve": "2026-05-01 12:00:00    1.0\n2026-05-01 12:01:00    1.0\n2026-05-01 12:02:00    1.0\n2026-05-01 12:03:00    1.0\n2026-05-01 12:04:00    1.0\n                      ... \n2026-05-22 07:55:00    1.0\n2026-05-22 07:56:00    1.0\n2026-05-22 07:57:00    1.0\n2026-05-22 07:58:00    1.0\n2026-05-22 07:59:00    1.0\nFreq: min, Length: 30000, dtype: float64"
+    },
+    "weights": {
+      "market_1": NaN,
+      "market_2": NaN,
+      "market_3": NaN
+    }
+  },
+  "files_saved": {
+    "data_parquet": "/home/workdir/artifacts/synthetic_prediction_market_data.pkl",
+    "price_plot": "/home/workdir/artifacts/prices_overlay.png",
+    "spread_plot": "/home/workdir/artifacts/spread_ou_mean.png",
+    "spread_histogram": "/home/workdir/artifacts/spread_histogram.png",
+    "rolling_beta": "/home/workdir/artifacts/rolling_beta.png",
+    "residual_diagnostics": "/home/workdir/artifacts/residual_diagnostics.png",
+    "backtest_equity": "/home/workdir/artifacts/backtest_equity_curve.png",
+    "portfolio_equity": "/home/workdir/artifacts/portfolio_equity_curve.png"
+  }
+}
