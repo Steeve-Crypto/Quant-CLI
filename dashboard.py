@@ -61,6 +61,12 @@ dummy_obi = pd.DataFrame({
     'market': ['Market1']*40 + ['Market2']*40
 })
 
+# Dummy rolling Sharpe for viz
+dummy_sharpe = pd.DataFrame({
+    'time': pd.date_range('2026-06-19', periods=100, freq='min'),
+    'sharpe': np.cumsum(np.random.randn(100) * 0.01) + 1.5 + np.random.randn(100) * 0.3
+})
+
 # App Layout
 app.layout = html.Div([
     html.H1("Prediction Market Quant Dashboard", style={'textAlign': 'center'}),
@@ -85,6 +91,7 @@ app.layout = html.Div([
         dcc.Tab(label='Backtest Results', children=[
             html.Div(id='metrics-table'),
             dcc.Graph(id='backtest-equity-chart'),
+            dcc.Graph(id='sharpe-ratio-chart', style={'height': '300px'}),
         ]),
         
         # Tab 4: Settings / Tuning
@@ -208,6 +215,16 @@ def toggle_live(n):
         html.H3(status),
         html.P("WS connected to Polymarket/Kalshi | OBI updating | DD scaling active")
     ])
+
+@callback(
+    Output('sharpe-ratio-chart', 'figure'),
+    Input('live-interval', 'n_intervals')
+)
+def update_sharpe_chart(n):
+    fig = px.line(dummy_sharpe, x='time', y='sharpe', title="Rolling Sharpe Ratio (Backtest)")
+    fig.add_hline(y=1.0, line_dash="dash", annotation_text="Good Sharpe (>1)")
+    fig.update_layout(height=280, margin=dict(l=40, r=20, t=40, b=30))
+    return fig
 
 # ============================================================
 # PAPER TRADING CALLBACKS (Execution Layer Integration)
