@@ -12,13 +12,22 @@ Built following the concepts from @ridark_eth's thread on quantitative hedge fun
 - Position sizing based on OU parameters (z-score scaled or vol-target)
 - Single-asset + **multi-asset portfolio backtesting** (correlation-aware min-variance, equal-risk)
 - Rich diagnostics: rolling beta, residual analysis, equity curves, etc.
+- **Full Streamlit UI dashboard** with existing charts + live WebSocket feed integration
 - Git-tracked development with regular commits
 
 ## Quick Start
 ```bash
 cd /home/workdir/artifacts
-python prediction_market_arb_pipeline.py
+python prediction_market_arb_pipeline.py          # Full pipeline + backtests
+streamlit run streamlit_dashboard.py             # Interactive dashboard (install streamlit first)
 ```
+
+**Dashboard Features**:
+- All existing charts and diagnostics
+- Live market monitor with OBI
+- Interactive parameter controls
+- Portfolio overview
+- Live feed simulation
 
 This runs the full pipeline:
 - Generates synthetic data
@@ -33,6 +42,7 @@ This runs the full pipeline:
 - `*.pkl` — Synthetic/processed data
 - `*.png` — All diagnostic and equity plots
 - `pipeline_results.json` — Full run summary
+- `streamlit_dashboard.py` — Full interactive UI (Streamlit)
 - `README.md`, `Specs.md` — Documentation
 
 ## Real-World Use Cases
