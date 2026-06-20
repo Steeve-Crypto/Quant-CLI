@@ -54,12 +54,15 @@ class LiveMarketState:
         self.asks: Dict[float, float] = {}
         self.last_price: Optional[float] = None
         self.last_update = datetime.now()
+        self.ws_latency_history: List[float] = []  # ms between updates
+        self.last_ws_timestamp = datetime.now()
         self.obi_history: List[float] = []
 
     def apply_snapshot(self, bids: List[dict], asks: List[dict]):
         """Apply full orderbook snapshot."""
         self.bids = {float(b['price']): float(b['size']) for b in bids}
         self.asks = {float(a['price']): float(a['size']) for a in asks}
+        self._update_latency()
         self._update_obi()
 
     def apply_delta(self, changes: List[dict], side: str = "bids"):
@@ -72,7 +75,17 @@ class LiveMarketState:
                 book.pop(price, None)
             else:
                 book[price] = size
+        self._update_latency()
         self._update_obi()
+
+    def _update_latency(self):
+        """Track WS update latency in ms."""
+        now = datetime.now()
+        latency_ms = (now - self.last_ws_timestamp).total_seconds() * 1000
+        self.ws_latency_history.append(latency_ms)
+        if len(self.ws_latency_history) > 100:
+            self.ws_latency_history.pop(0)
+        self.last_ws_timestamp = now
 
     def _update_obi(self, levels: int = 5):
         if not self.bids or not self.asks:
@@ -91,6 +104,10 @@ class LiveMarketState:
     @property
     def current_obi(self) -> float:
         return self.obi_history[-1] if self.obi_history else 0.0
+
+    @property
+    def avg_latency_ms(self) -> float:
+        return np.mean(self.ws_latency_history) if self.ws_latency_history else 0.0
 
     @property
     def mid_price(self) -> Optional[float]:
@@ -232,7 +249,8 @@ class LivePortfolioRunner:
     def on_market_update(self, state: LiveMarketState):
         """Called on every WS update. Evaluate signals + portfolio logic."""
         summary = state.get_summary()
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {summary}")
+        avg_latency = state.avg_latency_ms
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {summary} | Latency: {avg_latency:.1f}ms")
 
         # Simple signal example: OBI + price momentum (extend with pre-calibrated OU)
         obi = state.current_obi
@@ -266,7 +284,7 @@ class LivePortfolioRunner:
         self.peak_equity = max(self.peak_equity, self.equity)
 
         if abs(target_pos) > 0.1:
-            print(f"  >>> SIGNAL: {state.market_id} | Pos: {target_pos:.2f} | DD Scale: {dd_scale:.2f} | Equity: {self.equity:.4f}")
+            print(f"  >>> SIGNAL: {state.market_id} | Pos: {target_pos:.2f} | DD Scale: {dd_scale:.2f} | Equity: {self.equity:.4f} | Latency: {avg_latency:.1f}ms")
 
     async def run_forever(self):
         print("Starting Live Portfolio Runner...")
