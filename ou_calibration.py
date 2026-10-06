@@ -34,6 +34,10 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from typing import Tuple, Optional, Dict
 import warnings
+import os
+
+# Outputs go next to this script unless QUANT_ARTIFACTS_DIR is set.
+ARTIFACTS_DIR = os.environ.get("QUANT_ARTIFACTS_DIR", os.path.dirname(os.path.abspath(__file__)))
 warnings.filterwarnings('ignore')
 
 
@@ -246,8 +250,9 @@ def plot_ou_fit(spread: pd.Series, params: Dict[str, float], title: str = "OU Pr
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('/home/workdir/artifacts/ou_diagnostic.png', dpi=150, bbox_inches='tight')
-    print("Diagnostic plot saved to: /home/workdir/artifacts/ou_diagnostic.png")
+    out = os.path.join(ARTIFACTS_DIR, 'ou_diagnostic.png')
+    plt.savefig(out, dpi=150, bbox_inches='tight')
+    print(f"Diagnostic plot saved to: {out}")
 
 
 # ====================== DEMO / EXAMPLE ======================

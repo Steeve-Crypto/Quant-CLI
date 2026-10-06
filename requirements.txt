@@ -1,0 +1,12 @@
+# core pipeline
+numpy
+pandas
+scipy
+statsmodels
+matplotlib
+# dashboards and live feed
+plotly
+dash
+streamlit
+requests
+websockets

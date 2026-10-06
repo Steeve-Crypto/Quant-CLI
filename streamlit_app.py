@@ -49,7 +49,7 @@ refresh_live = st.sidebar.button("Refresh Live Data")
 tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Live Portfolio", "Backtest & Diagnostics", "Settings"])
 
 # Load latest results
-artifacts = Path("/home/workdir/artifacts")
+artifacts = Path(os.environ.get("QUANT_ARTIFACTS_DIR", Path(__file__).resolve().parent))
 results_file = artifacts / "pipeline_results.json"
 if results_file.exists():
     with open(results_file) as f:
@@ -121,4 +121,4 @@ if run_pipeline:
     st.success("Pipeline complete! Refresh charts.")
     st.rerun()
 
-st.caption("Built on the prediction market quant pipeline. All artifacts in /home/workdir/artifacts/")
+st.caption(f"Built on the prediction market quant pipeline. Artifacts in {artifacts}/")

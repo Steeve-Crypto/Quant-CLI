@@ -13,7 +13,7 @@ Features:
 - Easy to run: streamlit run streamlit_dashboard.py
 
 Install: pip install streamlit  (free, lightweight)
-Run: cd /home/workdir/artifacts && streamlit run streamlit_dashboard.py
+Run: streamlit run streamlit_dashboard.py (from the repo root)
 
 Integrates:
 - Existing plots from pipeline runs

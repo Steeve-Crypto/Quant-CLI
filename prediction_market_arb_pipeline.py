@@ -14,7 +14,7 @@ Full end-to-end pipeline that combines:
 This reproduces the complete workflow described in the @ridark_eth thread
 on quantitative arbitrage between prediction platforms (cointegration + OU + order book ideas).
 
-All outputs are saved to the /home/workdir/artifacts/ sandbox folder.
+Outputs are saved next to this script (override with QUANT_ARTIFACTS_DIR).
 
 Usage:
     python prediction_market_arb_pipeline.py
@@ -35,6 +35,9 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, Optional
 import warnings
+
+# Outputs go next to this script unless QUANT_ARTIFACTS_DIR is set.
+ARTIFACTS_DIR = os.environ.get("QUANT_ARTIFACTS_DIR", os.path.dirname(os.path.abspath(__file__)))
 warnings.filterwarnings('ignore')
 
 # Import the OU calibration functions from the previous script
@@ -515,7 +518,7 @@ def simple_multi_asset_portfolio_backtest(
 def run_prediction_market_arb_pipeline(
     data_source: str = 'synthetic',
     parquet_path: Optional[str] = None,
-    output_dir: str = '/home/workdir/artifacts',
+    output_dir: str = ARTIFACTS_DIR,
     verbose: bool = True
 ) -> Dict:
     """
@@ -812,7 +815,7 @@ if __name__ == "__main__":
     results = run_prediction_market_arb_pipeline(
         data_source='synthetic',           # Change to 'parquet' and provide path for real data
         # parquet_path='/path/to/your/l2_data.parquet',
-        output_dir='/home/workdir/artifacts',
+        output_dir=ARTIFACTS_DIR,
         verbose=True
     )
 
@@ -821,6 +824,6 @@ if __name__ == "__main__":
     print(f"  • Beta used for spread : {results['cointegration']['beta_used']:.4f}")
     print(f"  • OU theta (reversion) : {results['ou_calibration']['theta']:.2f}")
     print(f"  • OU R-squared         : {results['ou_calibration']['r_squared']:.4f}")
-    print(f"  • All artifacts saved in /home/workdir/artifacts/")
+    print(f"  • All artifacts saved in {ARTIFACTS_DIR}/")
 
     print("\nYou can now load the saved Parquet files or JSON for further analysis.")

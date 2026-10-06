@@ -4,6 +4,14 @@
 
 Built following the concepts from @ridark_eth's thread on quantitative hedge fund techniques for prediction market spreads.
 
+## Demo
+
+Charts below come from a run of `python prediction_market_arb_pipeline.py` on the built-in synthetic data. Outputs land next to the script, or in `QUANT_ARTIFACTS_DIR` if set.
+
+| Synthetic Polymarket vs Kalshi mids | Spread vs calibrated OU mean |
+|---|---|
+| ![Prices overlay](prices_overlay.png) | ![Spread vs OU mean](spread_ou_mean.png) |
+
 ## Features
 - Realistic synthetic data generator (regimes, shocks, latency, time-of-day effects)
 - Engle-Granger + **Johansen cointegration** testing
@@ -17,7 +25,8 @@ Built following the concepts from @ridark_eth's thread on quantitative hedge fun
 
 ## Quick Start
 ```bash
-cd /home/workdir/artifacts
+git clone https://github.com/Steeve-Crypto/Quant-CLI && cd Quant-CLI
+pip install -r requirements.txt
 python prediction_market_arb_pipeline.py          # Full pipeline + backtests
 streamlit run streamlit_dashboard.py             # Interactive dashboard (install streamlit first)
 ```
@@ -53,7 +62,7 @@ This runs the full pipeline:
 
 ### 1. Local Development (Recommended for Testing)
 ```bash
-cd /home/workdir/artifacts
+cd Quant-CLI
 
 # Install dependencies
 pip install -r requirements.txt   # or install individually:
@@ -111,7 +120,7 @@ KALSHI_API_SECRET=your_secret
 - Schedule the pipeline daily via cron or cloud scheduler.
 
 ## Requirements
-See `requirements.txt` (create one with the packages listed above if not present).
+See `requirements.txt`.
 
 3. **Sports / Awards**: Oscar predictions, Super Bowl props — fast mean-reversion on liquidity imbalances.
 4. **Backtesting Strategy Ideas**: Load your own L2 Parquet data (mid prices) and run the pipeline to evaluate cointegration strength, reversion speed (half-life vs latency), and portfolio Sharpe.
